@@ -18,6 +18,7 @@ except IndexError:
     print("Please include a port number, eg: python serve.py 50000")
     exit(-1)
 
+print('Server running')
 server = Server(port)
 server.serve()
-
+print('Client side termination')

@@ -80,8 +80,13 @@ class Server(object):
         """
 
         # TODO: YOUR CODE HERE
-
-        pass
+        return [
+                "You are in the room with the snot dripping stalactites.",
+                "You are in the room with the regurgitated bowels of Cthulu's victims.",
+                "You are in the room with the brown walls... something doesn't smell quite right...",
+                "You squezzed your way through the pinhole into the room with no windows and no doors.",
+                'You have climbed out of the plane of existence; you cease to exist. GAME OVER.',
+                ][room_number]
 
     def greet(self):
         """
@@ -109,8 +114,10 @@ class Server(object):
         """
 
         # TODO: YOUR CODE HERE
-
-        pass
+        received = b''
+        while b'\n' not in received:
+            received += self.client_connection.recv(16)
+        self.input_buffer = received.decode().strip()
 
     def move(self, argument):
         """
@@ -134,8 +141,23 @@ class Server(object):
         """
 
         # TODO: YOUR CODE HERE
+        if self.room == 0:
+            if 'north' in argument:
+                self.room = 3
+            elif 'west' in argument:
+                self.room = 1
+            elif 'east' in argument:
+                self.room = 2
+        elif self.room == 1 and 'east' in argument:
+            self.room = 0
+        elif self.room == 2 and 'west' in argument:
+            self.room = 0
+        elif self.room == 3 and 'south' in argument:
+            self.room = 0
+        else:
+            self.room = 4
 
-        pass
+        self.output_buffer = self.room_description(self.room)
 
     def say(self, argument):
         """
@@ -152,8 +174,7 @@ class Server(object):
         """
 
         # TODO: YOUR CODE HERE
-
-        pass
+        self.output_buffer = f'You say, {argument}'
 
     def quit(self, argument):
         """
@@ -168,11 +189,11 @@ class Server(object):
         """
 
         # TODO: YOUR CODE HERE
-
-        pass
+        self.done = True
+        self.output_buffer = "Goodbye!"
 
     def route(self):
-        """
+        '''
         Examines `self.input_buffer` to perform the correct action (move, quit, or
         say) on behalf of the client.
         
@@ -181,11 +202,34 @@ class Server(object):
         "move north", then `route` should invoke `self.move("north")`.
         
         :return: None
-        """
+        TEACHER's solution below
+        received = self.input_buffer.split(" ")
 
+        command = received.pop(0)
+        arguments = " ".join(received)
+
+        # If `self.input_buffer` was "say Is anybody here?", then:
+        # `command` should now be "say" and `arguments` should now be "Is anybody here?".
+        #
+        # If `self.input_buffer` was "move north", then:
+        # `command` should now be "move" and `arguments` should now be "north".
+
+        {
+            'quit': self.quit,
+            'move': self.move,
+            'say': self.say,
+        }[command](arguments)
+        '''
+        user_resp = self.input_buffer.lower()
+        if user_resp == "quit":
+            self.quit(None)
         # TODO: YOUR CODE HERE
-
-        pass
+        elif user_resp.startswith('say'):
+            self.say(user_resp.split(' ')[1])
+        elif self.input_buffer.startswith('move'):
+            self.move(user_resp.split(' ')[1])
+        else:
+            self.output_buffer = 'Invalid command'
 
     def push_output(self):
         """
@@ -198,8 +242,7 @@ class Server(object):
         """
 
         # TODO: YOUR CODE HERE
-
-        pass
+        self.client_connection.sendall(b"OK! " + self.output_buffer.encode() + b"\n")
 
     def serve(self):
         self.connect()
